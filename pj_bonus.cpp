@@ -24,6 +24,8 @@ class Travel{
             links = l;
             budget = b;
             start_time = s;
+            happiness = 0;
+            cost = 0;
             initialize();
         }
         ~Travel(){
@@ -129,14 +131,16 @@ class Travel{
 
             ///2.
             int choice_index = nodes_vec.size()-1;
-            int first_n = nodes_vec[choice_indx];
+            int first_n = nodes_vec[choice_index];
             float first_mw = nodes_happiness_id[first_n]/link_weight[from][first_n];
             for(int i=StepTable[max_cnt-1];i<StepTable[max_cnt];i++){
                 int sec_n = nodes_vec[i];
-                float new_mw = nodes_happiness_id[sec_n]/link_weight[from][sec_n];
-                first_mw = (first_mw>=sec_mw)? first_mw : sec_mw;
-                choice_index = (first_mw>=sec_mw)? choice_index : i;
+                float sec_mw = nodes_happiness_id[sec_n]/link_weight[from][sec_n];
+                bool flag = (first_mw>=sec_mw)? 1 : 0;
+                first_mw = (flag)? first_mw : sec_mw;
+                choice_index = (flag)? choice_index : i;
             }
+            first_n = nodes_vec[choice_index];
 
             //run
             for(int i=max_cnt;i>1;i--){
@@ -178,10 +182,15 @@ class Travel{
             delete []visited;
             delete []StepTable;
 
+            //add the link(from, first station)
+            cost+=link_weight[from][nodes_vec[0]];
+            budget-=link_weight[from][nodes_vec[0]];
+            happiness+=nodes_happiness_id[from];
+            nodes_happiness_id[from]=0;
+            //std::cout<<happiness<<" "<<cost;
 
-
-
-            if(min_dis[0][choice_index]<budget){//std::cout<<"%";
+            if(min_dis[0][nodes_vec[choice_index]]<budget){//no break
+                //std::cout<<budget;
                 int n = route[route_size-1];
                 int next_n = nodes_vec[choice_index];
                 //wait for next run.
@@ -198,9 +207,10 @@ class Travel{
             }
             else{
                 //end
+                int n = nodes_vec[max_cnt];
                 get_path(route, route_size);
-                delete []route;
-                ending_path(from);
+                delete []route;//std::cout<<from;
+                ending_path(first_n);
                 return 0;
             }
         }
@@ -249,11 +259,11 @@ class Travel{
             //StepTable[0]=0;
             for(int i=2;i<=max_cnt;i++){
                 StepTable[i] += StepTable[i-1];
-            }
+            }//std::cout<<max_cnt;
 
             //t_pair = <dis, value>
             int choice_index = nodes_vec.size()-1;
-            for(int i=max_cnt;i>0;i--){
+            for(int i=max_cnt;i>1;i--){
                 //if that point can't reach
                 route[route_size++]= nodes_vec[choice_index].second;
 
@@ -288,6 +298,12 @@ class Travel{
                 happiness+=nodes_happiness_id[n];
                 nodes_happiness_id[n]=0;
             }
+            //add the link(from, first station)
+            cost+=link_weight[from][nodes_vec[0].second];
+            budget-=link_weight[from][nodes_vec[0].second];
+            happiness+=nodes_happiness_id[from];
+            nodes_happiness_id[from]=0;
+
             get_path(route, route_size);
             delete []visited;
             delete []StepTable;
