@@ -17,7 +17,6 @@ int nodes_happiness_id[100];
 int link_weight[100][100];//?
 std::string nodes_name[100];
 Pair nodes_op_time[100];
-int test_i=0;
 
 class Node{
     public:
@@ -55,7 +54,7 @@ class Travel{
         void solve(){
             path.push_back(0);
             int from_idx = 0;
-            while(find_path(from_idx)){test_i++;}
+            while(find_path(from_idx));
             //end the path.
             ending_path(from_idx);
         }
