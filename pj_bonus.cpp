@@ -85,6 +85,9 @@ class Travel{
         ///tool functions
         void initialize(){
             ///build link list
+            //This table represent the adjacent nodes.
+            //The first node represent how many nodes are adjacent to node[i].
+            //(i.e. node_table[i]->num = how many node adjacent to node[i].)
             node_table = new Node*[nodes];
             for(int i=0;i<nodes;i++){
                 node_table[i]=nullptr;
@@ -109,6 +112,7 @@ class Travel{
             for(int i=0;i<nodes;i++){
                 for(int j=0;j<nodes;j++){
                     min_dis[i][j]=link_weight[i][j];
+                    if(i==j) min_dis[i][j]=0;
                 }
             }
 
@@ -129,16 +133,19 @@ class Travel{
             }
         }
         int analys(int *StepTable, const std::vector<Pair>& nodes_vec, const int& from, int& max_cnt){
+            ///we are going to find the optimum value of every node.
+            ///The formula = (distance + ports) * happiness.
+            ///distance is for decreasing iterations, and dead route avoidance.
             int max_value=0;
             int max_step;
-            int max_idx;
+            int max_idx=from;
 
             for(int i=max_cnt;i>0;i--){
                 for(int j=StepTable[i-1];j<StepTable[i];j++){
                     int x = nodes_vec[j].first;
                     int h = nodes_vec[j].second;
-                    int value = (i+node_table[x]->num)*h;
-                    if(value>max_value){
+                    int value = (i+node_table[x]->num)*h;//count formula.
+                    if(value>=max_value&&min_dis[from][x]<=budget){
                         max_value = value;
                         max_step = i;
                         max_idx = j;
@@ -179,6 +186,7 @@ class Travel{
 
             visited[from]=1;
 
+            //BFS
             while(!path_tree.empty()){
                 //p = <distance ,<count, value>>
                 t_Pair p = path_tree.front();
@@ -211,15 +219,6 @@ class Travel{
 
             ///2.
             int choice_index = analys(StepTable, nodes_vec, from, max_cnt);
-            int first_n = nodes_vec[choice_index].first;
-            float first_mw = (min_dis[from][first_n]==0)? 0 : (float)nodes_happiness_id[first_n]/min_dis[from][first_n];
-            for(int i=StepTable[max_cnt-1];i<StepTable[max_cnt];i++){
-                int sec_n = nodes_vec[i].first;
-                float sec_mw = (min_dis[from][sec_n]==0)? 0 : (float)nodes_happiness_id[sec_n]/min_dis[from][sec_n];
-                bool flag = (first_mw>=sec_mw)? 1 : 0;
-                first_mw = (flag)? first_mw : sec_mw;
-                choice_index = (flag)? choice_index : i;
-            }
             route[route_size++] = nodes_vec[choice_index].first;
 
             //run
@@ -242,13 +241,11 @@ class Travel{
                 //renew
                 route[route_size++] = nodes_vec[choice_index].first;
             }
-            //if(test_i==1){for(int i=0;i<route_size;i++) std::cout<<route[i];}
             delete []visited;
             delete []StepTable;
-
             //prune the path to fit size.
             int idx;
-            bool prune_flag = prune(from, route, route_size, idx);//std::cout<<idx;
+            bool prune_flag = prune(from, route, route_size, idx);
             get_path(route, idx, route_size);
             from = route[idx];
             delete []route;
@@ -256,7 +253,8 @@ class Travel{
             return prune_flag;
         }
 
-        void ending_path(const int& from){//std::cout<<from;
+        void ending_path(const int& from){//std::cout<<"\n"<<from;
+            if(from == 0) return;
             ///1.
             std::queue<t_Pair> path_tree;
             std::vector<Pair> nodes_vec;
@@ -279,7 +277,7 @@ class Travel{
                 t_Pair p = path_tree.front();
                 path_tree.pop();
 
-                if(visited[p.second.second]==false){//std::cout<<p.second.second;
+                if(visited[p.second.second]==false){
                     visited[p.second.second]=true;
                     //count
                     int cnt = p.second.first;
@@ -300,29 +298,28 @@ class Travel{
                 StepTable[i] += StepTable[i-1];
             }
             ///2
-            //t_pair = <dis, value>
-            int choice_index = nodes_vec.size()-1;//std:://cout<<max_cnt<<" ";
+            //pair = <dis, value>
+            int choice_index = nodes_vec.size()-1;
             //int virtual_cost=budget;
             route[route_size++] = nodes_vec[choice_index].second;
 
             for(int i=max_cnt-1;i>0;i--){
                 int next_choice_index=0;
-                int min_dis = MAX_WEIGHT;
+                int dis = MAX_WEIGHT;
                 int n = nodes_vec[choice_index].second;
 
                 for(int j=StepTable[i-1];j<StepTable[i];j++){
                     int next_n = nodes_vec[j].second;
                     //choose the best adjacent node.
                     if(link_weight[n][next_n]!=MAX_WEIGHT){//can_reach
-                        int new_dis = nodes_vec[choice_index].first;
-                        next_choice_index = ( min_dis>new_dis )? j : next_choice_index;
-                        min_dis = ( min_dis>new_dis )? new_dis : min_dis;
+                        int new_dis = link_weight[n][next_n]+min_dis[next_n][from];
+                        next_choice_index = ( dis>new_dis )? j : next_choice_index;
+                        dis = ( dis>new_dis )? new_dis : dis;
                     }
                 }
                 //iteration
                 choice_index = next_choice_index;
                 //renew
-
                 route[route_size++] = nodes_vec[choice_index].second;
             }
             delete []visited;
@@ -345,17 +342,20 @@ class Travel{
             int n = from;
             int i;
             for(i=route_size-1;i>=0;i--){
-                if(min_dis[from][route[i]]>budget){//No budget!!
+                if(min_dis[0][route[i]]>budget){//No budget!!
                     flag = 0;
                     break;
                 }
                 cost+=link_weight[n][route[i]];
-                budget-=cost;
+                budget-=link_weight[n][route[i]];
                 happiness+=nodes_happiness_id[route[i]];
                 nodes_happiness_id[route[i]]=0;
                 n=route[i];
             }
+
+            if(route_size==1&&route[0]==0) flag=0;//special case.
             idx = i+1;
+
             return flag;
         }
         void get_path(int* route, const int& start_idx, const int& end_idx){
@@ -413,8 +413,8 @@ int main(void){
     }
     //travel
     Travel t(nodes, links, budget, astart_time);
-    t.solve();std::cout<<"#";
-    t.output();std::cout<<"#";
+    t.solve();//std::cout<<"#";
+    t.output();//std::cout<<"#";
 
     //close files and finish
     in_file.close();
