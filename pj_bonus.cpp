@@ -3,6 +3,8 @@
 #include <queue>
 #include <stack>
 #include <string>
+#include <algorithm>
+
 #define IN_FILE_NAME "tp.data"
 #define OUT_FILE_NAME "ans1.txt"
 #define MAX_WEIGHT 2147483647
@@ -17,6 +19,12 @@ int nodes_happiness_id[100];
 int link_weight[100][100];//?
 std::string nodes_name[100];
 Pair nodes_op_time[100];
+
+
+bool compare_func(const d_Pair& i, const d_Pair& j){
+    return (i.first.second < j.first.second);
+}
+
 
 class Node{
     public:
@@ -44,8 +52,6 @@ class Travel{
             initialize();
         }
         ~Travel(){
-            for(int i=0;i<nodes;i++) delete []min_dis[i];
-            delete []min_dis;
             for(int i=0;i<nodes;i++){
                 delete_node_table(node_table[i]);
             }
@@ -54,7 +60,7 @@ class Travel{
         void solve(){
             path.push_back(0);
             int from_idx = 0;
-            while(find_path(from_idx));
+            while(find_path(from_idx)) std::cout<<from_idx<<"\n";
             //end the path.
             ending_path(from_idx);
         }
@@ -104,7 +110,6 @@ class Travel{
                 head->next = node_table[i];
                 node_table[i] = head;
             }
-
             ///build mis_dis
             min_dis = new int* [nodes];
             for(int i=0;i<nodes;i++) min_dis[i] = new int[nodes];
@@ -132,208 +137,197 @@ class Travel{
                 delete n;
             }
         }
-        int analys(int *StepTable, const std::vector<Pair>& nodes_vec, const int& from, int& max_cnt){
+        void analys(const std::vector<d_Pair>& nodes_vec, int& choice_step, int& choice_index){
             ///we are going to find the optimum value of every node.
-            ///The formula = (distance + ports) * happiness.
-            ///distance is for decreasing iterations, and dead route avoidance.
+            ///The formula = (step + ports) * happiness.
+            ///step is for decreasing iterations, and dead route avoidance.
             int max_value=0;
-            int max_step;
-            int max_idx=from;
+            int max_idx=0;
 
-            for(int i=max_cnt;i>0;i--){
-                for(int j=StepTable[i-1];j<StepTable[i];j++){
-                    int x = nodes_vec[j].first;
-                    int h = nodes_vec[j].second;
-                    int value = (i+node_table[x]->num)*h;//count formula.
-                    if(value>=max_value&&min_dis[from][x]<=budget){
-                        max_value = value;
-                        max_step = i;
-                        max_idx = j;
-                    }
+            //<step, <happiness, time>>
+            for(int i=1;i<nodes;i++){
+                int s = nodes_vec[i].first.second;
+                int h = nodes_vec[i].second.first;
+                int t = nodes_vec[i].second.second;
+                int value = (s+node_table[i]->num)*h;//count formula.
+                if(value>=max_value&&t<=budget){
+                    max_value = value;
+                    max_idx = i;
                 }
             }
-
-            max_cnt = max_step;
-            return max_idx;
+            choice_index = max_idx;
+            choice_step = nodes_vec[choice_index].first.second;
         }
+
+
         bool find_path(int& from){
-            //path.push_back(from);
-            //we choose paths according to the gain value (happiness / distance);
-            //first, we do BFS starting from "from point".
-            //second, choose the points which are can_reach and high gain.
-            //examine if the chosen "to point" can back to the base in limit budget every iteration.
             ///1.
-            std::queue<t_Pair> path_tree;
-            std::vector<Pair> nodes_vec;
+            std::queue<d_Pair> path_tree;//<<id, step>, <happiness, time>>
 
-            bool* visited = new bool[nodes];
-            int* StepTable = new int[nodes];
-            int* route = new int[nodes];
-            int route_size=0;
-            int max_cnt=0;
-
+            //shortest_table
+            t_Pair* shortest_table = new t_Pair[nodes];//<step, <happiness, time>>
+            for(int i=0;i<nodes;i++){
+                shortest_table[i] = {-1, {-1, -1}};
+            }
+            shortest_table[from] = {0, {0, 0}};
+            //node_table
             Node* np = node_table[from]->next;
             while(np != nullptr){
                 int i = np->num;
-                path_tree.push({nodes_happiness_id[i],{1, i}});
+                path_tree.push({{i, 1}, {nodes_happiness_id[i], link_weight[from][i]}});
                 np = np->next;
             }
 
-            for(int i=0;i<nodes;i++){
-                visited[i]=0;
-                StepTable[i]=0;
-            }
-
-            visited[from]=1;
-
             //BFS
             while(!path_tree.empty()){
-                //p = <distance ,<count, value>>
-                t_Pair p = path_tree.front();
+                d_Pair p = path_tree.front();
                 path_tree.pop();
 
-                if(visited[p.second.second]==false){
-                    visited[p.second.second]=true;
-                    //count
-                    int cnt = p.second.first;
-                    StepTable[cnt]++;
-                    if(cnt>max_cnt) max_cnt = cnt;
+                int id = p.first.first;
+                int step = p.first.second;
+                int acc_happ = p.second.second;
+                int acc_time = p.second.second;
 
-                    //push_back
-                    nodes_vec.push_back({p.second.second, p.first});
+                float n_w = (acc_time==0)? 1000 : acc_happ/acc_time;
+                float o_w = (shortest_table[id].second.second==0)? 1000 : shortest_table[id].second.first/shortest_table[id].second.second;
 
-                    //get next
-                    Node* n = node_table[p.second.second]->next;
+                if(shortest_table[id].first==-1||n_w > o_w){
+                    shortest_table[id] = {step, {acc_happ, acc_time}};//<step, <happiness, time>>
+                }
+
+                //get next
+                if(step<nodes){//skewed case
+                    Node* n = node_table[id]->next;
                     while(n != nullptr){
                         int i = n->num;
-                        path_tree.push({p.first+nodes_happiness_id[i],{cnt+1, i}});
+                        path_tree.push({{i, step+1}, {acc_happ+nodes_happiness_id[i], acc_time+link_weight[id][i]}});
                         n = n->next;
                     }
                 }
             }
 
-            StepTable[0]=0;
-            for(int i=2;i<=max_cnt;i++){
-                StepTable[i] += StepTable[i-1];
-            }
-
             ///2.
-            int choice_index = analys(StepTable, nodes_vec, from, max_cnt);
-            route[route_size++] = nodes_vec[choice_index].first;
+            //sort the shortest_path
+            std::vector<d_Pair> shortest_vec;
+            for(int i=0;i<nodes;i++) shortest_vec.push_back({{i, shortest_table[i].first}, shortest_table[i].second});
+            std::sort(shortest_vec.begin(), shortest_vec.end(), compare_func);
+
+            delete []shortest_table;
+
+            //route
+            int* route = new int[nodes];
+            int route_size=0;
+            int choice_step;
+            int choice_index;
+
+            analys(shortest_vec, choice_step, choice_index);
+            if(choice_index == 0) return 0;//from
 
             //run
-            for(int i=max_cnt-1;i>0;i--){
-                int next_choice_index=0;
-                float max_weight=0;
-                int n = nodes_vec[choice_index].first;
+            int last_id = shortest_vec[choice_index--].first.first;
+            route[route_size++] = last_id;
+            while(shortest_vec[choice_index].first.second==choice_step){choice_index--;}
 
-                for(int j=StepTable[i-1];j<StepTable[i];j++){
-                    int next_n = nodes_vec[j].first;
-                    //choose the best adjacent node.
-                    if(link_weight[n][next_n]!=MAX_WEIGHT){//can_reach
-                        float new_weight = (float)nodes_happiness_id[next_n]/link_weight[n][next_n];
-                        next_choice_index = ( max_weight<new_weight )? j : next_choice_index;
-                        max_weight = ( max_weight<new_weight )? new_weight : max_weight;
+            while(choice_step--){
+                //get the next node.
+                while(shortest_vec[choice_index].first.second == choice_step){
+                    int id = shortest_vec[choice_index].first.first;
+                    if(link_weight[last_id][id]!=MAX_WEIGHT){//can reach.
+                        route[route_size++] = shortest_vec[choice_index].first.first;
+                        last_id = id;
                     }
+                    choice_index--;
                 }
-                //iteration
-                choice_index = next_choice_index;
-                //renew
-                route[route_size++] = nodes_vec[choice_index].first;
+
             }
-            delete []visited;
-            delete []StepTable;
             //prune the path to fit size.
             int idx;
-            bool prune_flag = prune(from, route, route_size, idx);
-            get_path(route, idx, route_size);
+            bool prune_flag = prune(from, route, route_size-1, idx);
+            get_path(route, idx, route_size-1);
             from = route[idx];
+            //for(int i=idx;i<route_size;i++) std::cout<<route[i]<<" ";
+            //system("pause");
             delete []route;
 
             return prune_flag;
         }
 
-        void ending_path(const int& from){//std::cout<<"\n"<<from;
+        void ending_path(const int& from){
             if(from == 0) return;
             ///1.
-            std::queue<t_Pair> path_tree;
-            std::vector<Pair> nodes_vec;
+            std::queue<d_Pair> path_tree;//<<id, step>, <happiness, time>>
 
-            bool* visited = new bool[nodes];
-            int* StepTable = new int[nodes];
-            int* route = new int[nodes];
-            int route_size=0;
-            int max_cnt=0;
-
+            //shortest_table
+            t_Pair* shortest_table = new t_Pair[nodes];//<step, <happiness, time>>
             for(int i=0;i<nodes;i++){
-                visited[i]=0;
-                StepTable[i]=0;
-                //push the adjacent node into path_tree.
-                if(link_weight[from][i]!=MAX_WEIGHT) path_tree.push({link_weight[from][i],{1, i}});
+                shortest_table[i] = {-1, {-1, -1}};
+            }
+            shortest_table[from] = {0, {0, 0}};
+            //node_table
+            Node* np = node_table[from]->next;
+            while(np != nullptr){
+                int i = np->num;
+                path_tree.push({{i, 1}, {nodes_happiness_id[i], link_weight[from][i]}});
+                np = np->next;
             }
 
+            //BFS
             while(!path_tree.empty()){
-                //p = <distance ,<count, value>>
-                t_Pair p = path_tree.front();
+                d_Pair p = path_tree.front();
                 path_tree.pop();
 
-                if(visited[p.second.second]==false){
-                    visited[p.second.second]=true;
-                    //count
-                    int cnt = p.second.first;
-                    StepTable[cnt]++;
-                    if(cnt>max_cnt) max_cnt = cnt;
+                int id = p.first.first;
+                int step = p.first.second;
+                int acc_happ = p.second.second;
+                int acc_time = p.second.second;
 
-                    //push_back
-                    nodes_vec.push_back({p.first,p.second.second});
-                    if(p.second.second == 0) break;
-
-                    //get next
-                    for(int i=0;i<nodes;i++)
-                        if(link_weight[p.second.second][i]!=MAX_WEIGHT) path_tree.push({p.first+link_weight[p.second.second][i],{cnt+1, i}});//(use link list?)
+                if(shortest_table[id].first==-1||shortest_table[id].second.second>acc_time){
+                    shortest_table[id] = {step, {acc_happ, acc_time}};//<step, <happiness, time>>
                 }
-            }
-            StepTable[0]=0;
-            for(int i=2;i<=max_cnt;i++){
-                StepTable[i] += StepTable[i-1];
-            }
-            ///2
-            //pair = <dis, value>
-            int choice_index = nodes_vec.size()-1;
-            //int virtual_cost=budget;
-            route[route_size++] = nodes_vec[choice_index].second;
 
-            for(int i=max_cnt-1;i>0;i--){
-                int next_choice_index=0;
-                int dis = MAX_WEIGHT;
-                int n = nodes_vec[choice_index].second;
-
-                for(int j=StepTable[i-1];j<StepTable[i];j++){
-                    int next_n = nodes_vec[j].second;
-                    //choose the best adjacent node.
-                    if(link_weight[n][next_n]!=MAX_WEIGHT){//can_reach
-                        int new_dis = link_weight[n][next_n]+min_dis[next_n][from];
-                        next_choice_index = ( dis>new_dis )? j : next_choice_index;
-                        dis = ( dis>new_dis )? new_dis : dis;
+                //get next
+                if(step<nodes){//skewed case
+                    Node* n = node_table[id]->next;
+                    while(n != nullptr){
+                        int i = n->num;
+                        path_tree.push({{i, step+1}, {acc_happ+nodes_happiness_id[i], acc_time+link_weight[id][i]}});
+                        n = n->next;
                     }
                 }
-                //iteration
-                choice_index = next_choice_index;
-                //renew
-                route[route_size++] = nodes_vec[choice_index].second;
             }
-            delete []visited;
-            delete []StepTable;
-            //prune the path to fit size.
-            int n = from;
-            for(int i=route_size-1;i>=0;i--){
-                cost+=link_weight[n][route[i]];
-                budget-=cost;
-                happiness+=nodes_happiness_id[route[i]];
-                nodes_happiness_id[route[i]]=0;
-                n=route[i];
+
+            ///2.
+            //sort the shortest_path
+            std::vector<d_Pair> shortest_vec;
+            for(int i=0;i<nodes;i++) shortest_vec.push_back({{i, shortest_table[i].first}, shortest_table[i].second});
+            std::sort(shortest_vec.begin(), shortest_vec.end(), compare_func);
+
+            delete []shortest_table;
+
+            //route
+            int* route = new int[nodes];
+            int route_size=0;
+            int choice_step=shortest_vec[0].first.second;
+            int choice_index=0;
+
+            //run
+            int last_id = shortest_vec[choice_index--].first.first;
+            route[route_size++] = last_id;
+            while(shortest_vec[choice_index].first.second==choice_step){choice_index--;}
+
+            while(choice_step--){
+                //get the next node.
+                while(shortest_vec[choice_index].first.second == choice_step){
+                    int id = shortest_vec[choice_index].first.first;
+                    if(link_weight[last_id][id]!=MAX_WEIGHT){//can reach.
+                        route[route_size++] = shortest_vec[choice_index].first.first;
+                        last_id = id;
+                    }
+                    choice_index--;
+                }
+
             }
-            get_path(route, 0, route_size);
+            get_path(route, 0, route_size-1);
             delete []route;
         }
 
@@ -341,8 +335,10 @@ class Travel{
             bool flag = 1;
             int n = from;
             int i;
+
             for(i=route_size-1;i>=0;i--){
-                if(min_dis[0][route[i]]>budget){//No budget!!
+                int v_b = budget-link_weight[n][route[i]];
+                if(min_dis[0][route[i]]>v_b){//No budget!!
                     flag = 0;
                     break;
                 }
@@ -389,6 +385,7 @@ int main(void){
     for(int i=0;i<nodes;i++){
         for(int j=0;j<nodes;j++){
             link_weight[i][j]=MAX_WEIGHT;
+            if(i==j) link_weight[i][j]=0;
         }
     }
     for(int i=0;i<links;i++){
@@ -413,12 +410,11 @@ int main(void){
     }
     //travel
     Travel t(nodes, links, budget, astart_time);
-    t.solve();//std::cout<<"#";
-    t.output();//std::cout<<"#";
+    t.solve();std::cout<<"#";
+    t.output();std::cout<<"#";
 
     //close files and finish
     in_file.close();
     out_file.close();
     return 0;
 }
-
