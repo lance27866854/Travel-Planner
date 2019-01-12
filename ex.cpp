@@ -4,7 +4,7 @@
 #include <map>
 
 #define IN_FILE_NAME1 "tp.data"
-#define IN_FILE_NAME2 "ans1.txt"
+#define IN_FILE_NAME2 "ans2.txt"
 #define MAX_WEIGHT 2147483647
 #define WRONG_NAME_ERROR 30
 #define WRONG_POINT_ERROR 31
@@ -12,7 +12,8 @@
 #define WRONG_TIME_ERROR 33
 #define WRONG_HAPPINESS_ERROR 34
 #define WRONG_COST_ERROR 35
-#define COMPLETE 36
+#define EXCESS_COST_ERROR 36
+#define COMPLETE 37
 
 using namespace std;
 typedef pair<int, int> Pair;
@@ -36,6 +37,7 @@ class Examine{
             if(error == WRONG_NAME_ERROR) cout<<"\nWrong name.\n";
             else if(error == WRONG_POINT_ERROR) cout<<"\nWrong point.\n";
             else if(error == WRONG_TIME_ERROR) cout<<"\nWrong time.\n";
+            else if(error == EXCESS_COST_ERROR) cout<<"\nExcess budget.\n";
             else if(error == WRONG_PATH_ERROR) cout<<"\nWrong path.\n";
             else if(error == WRONG_HAPPINESS_ERROR) cout<<"\nWrong happiness.\n";
             else if(error == WRONG_COST_ERROR) cout<<"\nWrong cost.\n";
@@ -91,30 +93,35 @@ class Examine{
 
             in_file2>>happiness>>cost;
             in_file2>>s>>in_time>>out_time;
+            if(cost>budget) return EXCESS_COST_ERROR;
             if(nodes_name[0]!=s) return WRONG_POINT_ERROR;
             if(in_time!=now_time) return WRONG_TIME_ERROR;
+            if(nodes_op_time[0].first<=now_time && now_time<=nodes_op_time[0].second){
+                ex_happiness+=nodes_happiness_id[now_idx];
+                nodes_happiness_id[now_idx]=0;
+            }
             now_time = out_time;
-            ex_happiness+=nodes_happiness_id[now_idx];
-            nodes_happiness_id[now_idx]=0;
 
             while(in_file2>>s>>in_time>>out_time){
 
                 auto it = name_map.find(s);
                 if(it == name_map.end()) return WRONG_NAME_ERROR;
-
                 next_idx = it->second;
 
                 if(link_weight[now_idx][next_idx]==MAX_WEIGHT) return WRONG_PATH_ERROR;
-                ex_cost+=link_weight[now_idx][next_idx];
-                ex_happiness+=nodes_happiness_id[next_idx];
-                nodes_happiness_id[next_idx]=0;
-
                 now_time+=link_weight[now_idx][next_idx];
                 if(in_time!=now_time) return WRONG_TIME_ERROR;
+                ex_cost+=link_weight[now_idx][next_idx];
+
+                if(nodes_op_time[next_idx].first<=now_time && now_time<=nodes_op_time[next_idx].second){
+                    ex_happiness+=nodes_happiness_id[next_idx];
+                    nodes_happiness_id[next_idx]=0;
+                }
 
                 now_idx = next_idx;
                 now_time = out_time;
             }
+            cout<<ex_happiness<<" "<<happiness<<"\n";
             if(ex_happiness!=happiness) return WRONG_HAPPINESS_ERROR;
             if(ex_cost!=cost) return WRONG_COST_ERROR;
             return COMPLETE;
