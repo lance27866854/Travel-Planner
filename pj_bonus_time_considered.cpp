@@ -6,14 +6,13 @@
 #include <algorithm>
 
 #define IN_FILE_NAME "tp.data"
-#define OUT_FILE_NAME "ans2.txt"
+#define OUT_FILE_NAME1 "ans1.txt"
+#define OUT_FILE_NAME2 "ans2.txt"
 #define MAX_WEIGHT 2147483647
 std::ifstream in_file;
 std::ofstream out_file;
 
 typedef std::pair<int, int> Pair;
-typedef std::pair<int, Pair> t_Pair;
-typedef std::pair<Pair, Pair> d_Pair;
 
 int nodes_happiness_id[100];
 int link_weight[100][100];
@@ -68,13 +67,15 @@ bool compare_func_decending_time(const Path_node& i, const Path_node& j){
 
 class Travel{
     public:
-        Travel(const int& n, const int& l, const int& b,const int& s){
+        Travel(const int& n, const int& l, const int& b,const int& s, const bool& tc){
             nodes = n;
             links = l;
             budget = b;
             start_time = s;
+            end_time = s+b;
             happiness = 0;
             cost = 0;
+            time_consider = !tc;
             initialize();
         }
         ~Travel(){
@@ -85,16 +86,22 @@ class Travel{
         }
         void solve(){
             path.push_back(0);
-            if(nodes_op_time[0].first<=start_time && start_time<=nodes_op_time[0].second){
+            if(time_consider||(nodes_op_time[0].first<=start_time && start_time<=nodes_op_time[0].second)){
                 happiness += nodes_happiness_id[0];
+                nodes_happiness_id[0] = 0;
             }
-            nodes_happiness_id[0] = 0;
 
             int from_idx = 0;
             int current_time = start_time;
             while(find_path(from_idx, current_time));
             ending_path(from_idx, current_time);
-            //consider special case!!(can't move.) debug.
+            for(int i=current_time;i<end_time;i++){
+                if(time_consider||(nodes_op_time[0].first<=i && i<=nodes_op_time[0].second)){
+                    happiness += nodes_happiness_id[0];
+                    nodes_happiness_id[0] = 0;
+                    break;
+                }
+            }
         }
         void output(){
             out_file<<happiness<<" "<<cost<<"\n";
@@ -112,12 +119,13 @@ class Travel{
         std::vector<int> path;
         int cost;
         int happiness;
-        //constant
+        //variables
         int budget;
         int nodes, links;
         int start_time;
+        int end_time;
+        bool time_consider;
         int **min_dis;
-        //container
         Node **node_table;
 
         ///tool functions
@@ -193,7 +201,7 @@ class Travel{
         }
 
         int get_happiness(const int& arrive_time, const int& id){
-            if(arrive_time>=nodes_op_time[id].first && arrive_time<=nodes_op_time[id].second){
+            if(time_consider||(arrive_time>=nodes_op_time[id].first && arrive_time<=nodes_op_time[id].second)){
                 return nodes_happiness_id[id];
             }
             else return 0;
@@ -412,6 +420,7 @@ class Travel{
             int route_happ = optimum_table[route[0]].happiness;//back_point.
             int route_time = optimum_table[route[0]].time;
             cost+=route_time;
+            current_time+=route_time;
             budget-=route_time;
             happiness+=route_happ;
 
@@ -454,11 +463,11 @@ class Travel{
 
 
 int main(void){
+    ///case 1.
     //files
     in_file.open(IN_FILE_NAME, std::ios::in);
-    out_file.open(OUT_FILE_NAME, std::ios::out);
+    out_file.open(OUT_FILE_NAME1, std::ios::out);
     if(!in_file||!out_file) std::cout<<"something wrong with the files.";
-
     //input
     int nodes, links, budget, astart_time;
     in_file>>nodes>>links>>budget>>astart_time;
@@ -500,12 +509,65 @@ int main(void){
         link_weight[t_idx][f_idx]=weight;
     }
     //travel
-    Travel t(nodes, links, budget, astart_time);
-    t.solve();std::cout<<"#";
-    t.output();std::cout<<"#";
+    Travel t1(nodes, links, budget, astart_time, 0);
+    t1.solve();
+    t1.output();
+    //close files and finish
+    in_file.close();
+    out_file.close();
 
+    ///case 2.
+    //files
+    in_file.open(IN_FILE_NAME, std::ios::in);
+    out_file.open(OUT_FILE_NAME2, std::ios::out);
+    if(!in_file||!out_file) std::cout<<"something wrong with the files.";
+    //input
+    in_file>>nodes>>links>>budget>>astart_time;
+    //nodes
+    for(int i=0;i<nodes;i++){
+        std::string name;
+        int happiness_id, start_time, close_time;
+        in_file>>name>>happiness_id>>start_time>>close_time;
+        nodes_name[i] = name;
+        nodes_happiness_id[i] = happiness_id;
+        nodes_op_time[i].first = start_time;
+        nodes_op_time[i].second = close_time;
+    }
+    //links
+    for(int i=0;i<nodes;i++){
+        for(int j=0;j<nodes;j++){
+            link_weight[i][j]=MAX_WEIGHT;
+            if(i==j) link_weight[i][j]=0;
+        }
+    }
+    for(int i=0;i<links;i++){
+        std::string from, to;
+        int weight;
+        in_file>>from>>to>>weight;
+
+        int flag=0;
+        int f_idx, t_idx;
+        for(int i=0;i<nodes&&flag!=2;i++){//map??
+            if(nodes_name[i]==from){
+                f_idx = i;
+                flag++;
+            }
+            else if(nodes_name[i]==to){
+                t_idx = i;
+                flag++;
+            }
+        }
+        link_weight[f_idx][t_idx]=weight;
+        link_weight[t_idx][f_idx]=weight;
+    }
+    //travel
+    Travel t2(nodes, links, budget, astart_time, 1);
+    t2.solve();
+    t2.output();
     //close files and finish
     in_file.close();
     out_file.close();
     return 0;
 }
+
+
