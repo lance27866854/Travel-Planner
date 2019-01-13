@@ -4,7 +4,8 @@
 #include <map>
 
 #define IN_FILE_NAME1 "tp.data"
-#define IN_FILE_NAME2 "ans2.txt"
+#define IN_FILE_NAME2 "ans1.txt"
+#define IN_FILE_NAME3 "ans2.txt"
 #define MAX_WEIGHT 2147483647
 #define WRONG_NAME_ERROR 30
 #define WRONG_POINT_ERROR 31
@@ -30,22 +31,26 @@ map<string, int> name_map;
 class Examine{
     public:
         Examine(){}
+        Examine(const int& tc){time_consider = !tc;}
         ~Examine(){}
         void out(){
             int error = examine_path();
 
-            if(error == WRONG_NAME_ERROR) cout<<"\nWrong name.\n";
-            else if(error == WRONG_POINT_ERROR) cout<<"\nWrong point.\n";
-            else if(error == WRONG_TIME_ERROR) cout<<"\nWrong time.\n";
-            else if(error == EXCESS_COST_ERROR) cout<<"\nExcess budget.\n";
-            else if(error == WRONG_PATH_ERROR) cout<<"\nWrong path.\n";
-            else if(error == WRONG_HAPPINESS_ERROR) cout<<"\nWrong happiness.\n";
-            else if(error == WRONG_COST_ERROR) cout<<"\nWrong cost.\n";
-            else if(error == COMPLETE) cout<<"\nComplete.\n";
-            else cout<<"\nSomething wrong with the examination process.\n";
+            cout<<"Case "<<(time_consider? "1 :" : "2 :");
+
+            if(error == WRONG_NAME_ERROR) cout<<"Wrong name.\n";
+            else if(error == WRONG_POINT_ERROR) cout<<"Wrong point.\n";
+            else if(error == WRONG_TIME_ERROR) cout<<"Wrong time.\n";
+            else if(error == EXCESS_COST_ERROR) cout<<"Excess budget.\n";
+            else if(error == WRONG_PATH_ERROR) cout<<"Wrong path.\n";
+            else if(error == WRONG_HAPPINESS_ERROR) cout<<"Wrong happiness.\n";
+            else if(error == WRONG_COST_ERROR) cout<<"Wrong cost.\n";
+            else if(error == COMPLETE) cout<<"Complete.\n";
+            else cout<<"Something wrong with the examination process.\n";
         }
 
     private:
+        bool time_consider;
         int examine_path(){
             int nodes, links, budget, astart_time;
 
@@ -96,7 +101,7 @@ class Examine{
             if(cost>budget) return EXCESS_COST_ERROR;
             if(nodes_name[0]!=s) return WRONG_POINT_ERROR;
             if(in_time!=now_time) return WRONG_TIME_ERROR;
-            if(nodes_op_time[0].first<=now_time && now_time<=nodes_op_time[0].second){
+            if(time_consider||(nodes_op_time[0].first<=now_time && now_time<=nodes_op_time[0].second)){
                 ex_happiness+=nodes_happiness_id[now_idx];
                 nodes_happiness_id[now_idx]=0;
             }
@@ -113,7 +118,7 @@ class Examine{
                 if(in_time!=now_time) return WRONG_TIME_ERROR;
                 ex_cost+=link_weight[now_idx][next_idx];
 
-                if(nodes_op_time[next_idx].first<=now_time && now_time<=nodes_op_time[next_idx].second){
+                if(time_consider||(nodes_op_time[next_idx].first<=now_time && now_time<=nodes_op_time[next_idx].second)){
                     ex_happiness+=nodes_happiness_id[next_idx];
                     nodes_happiness_id[next_idx]=0;
                 }
@@ -121,7 +126,6 @@ class Examine{
                 now_idx = next_idx;
                 now_time = out_time;
             }
-            cout<<ex_happiness<<" "<<happiness<<"\n";
             if(ex_happiness!=happiness) return WRONG_HAPPINESS_ERROR;
             if(ex_cost!=cost) return WRONG_COST_ERROR;
             return COMPLETE;
@@ -129,13 +133,21 @@ class Examine{
 };
 
 int main(void){
+    ///case 1.
     in_file1.open(IN_FILE_NAME1, ios::in);
     in_file2.open(IN_FILE_NAME2, ios::in);
     if(!in_file1||!in_file2) cout<<"\nsomething wrong with the files.\n";
+    Examine ex1(0);
+    ex1.out();
+    in_file1.close();
+    in_file2.close();
 
-    Examine ex;
-    ex.out();
-
+    ///case 2.
+    in_file1.open(IN_FILE_NAME1, ios::in);
+    in_file2.open(IN_FILE_NAME3, ios::in);
+    if(!in_file1||!in_file2) cout<<"\nsomething wrong with the files.\n";
+    Examine ex2(1);
+    ex2.out();
     in_file1.close();
     in_file2.close();
     return 0;
