@@ -9,6 +9,7 @@
 #define OUT_FILE_NAME1 "ans1.txt"
 #define OUT_FILE_NAME2 "ans2.txt"
 #define MAX_WEIGHT 2147483647
+#define DAY_TIME 1440
 std::ifstream in_file;
 std::ofstream out_file;
 
@@ -95,7 +96,7 @@ class Travel{
             int current_time = start_time;
             while(find_path(from_idx, current_time));
             ending_path(from_idx, current_time);
-            for(int i=current_time;i<end_time;i++){
+            for(int i=current_time;i<=end_time;i++){
                 if(time_consider||(nodes_op_time[0].first<=i && i<=nodes_op_time[0].second)){
                     happiness += nodes_happiness_id[0];
                     nodes_happiness_id[0] = 0;
@@ -108,7 +109,7 @@ class Travel{
             int s = path.size();
             for(int i=0;i<s;i++){
                 out_file<<nodes_name[path[i]]<<" "<<start_time<<" "<<start_time;
-                if(i!=s-1) start_time+=link_weight[path[i]][path[i+1]];
+                if(i!=s-1) start_time=(start_time+link_weight[path[i]][path[i+1]])%DAY_TIME;
                 out_file<<"\n";
             }
         }
@@ -219,7 +220,8 @@ class Travel{
             while(np != nullptr){
                 int i = np->num;
                 int renew_time = link_weight[from][i];
-                int renew_happiness = get_happiness(current_time+renew_time, i);
+                int real_time = (current_time+renew_time)%DAY_TIME;
+                int renew_happiness = get_happiness(real_time, i);
                 path_tree.push({i, 1, renew_happiness, renew_time, from});
                 np = np->next;
             }
@@ -255,7 +257,8 @@ class Travel{
                         int i = n->num;
                         if(i==from){ n=n->next;continue;}
                         int renew_time = acc_time+link_weight[id][i];
-                        int renew_happiness = acc_happ+get_happiness(current_time+renew_time, i);
+                        int real_time = (current_time+renew_time)%DAY_TIME;
+                        int renew_happiness = acc_happ+get_happiness(real_time, i);
                         temp_vec.push_back({i, step+1, renew_happiness, renew_time, id});
                         n = n->next;
                     }
@@ -309,9 +312,9 @@ class Travel{
             int route_happ = optimum_table[route[idx]].happiness;
             int route_time = optimum_table[route[idx]].time;
             cost+=route_time;
-            current_time+=route_time;
             budget-=route_time;
             happiness+=route_happ;
+            current_time=(current_time+route_time)%DAY_TIME;
 
             //get path
             get_path(route, idx, route_size-1);
@@ -334,7 +337,8 @@ class Travel{
             while(np != nullptr){
                 int i = np->num;
                 int renew_time = link_weight[from][i];
-                int renew_happiness = get_happiness(current_time+renew_time, i);
+                int real_time = (current_time+renew_time)%DAY_TIME;
+                int renew_happiness = get_happiness(real_time, i);
                 path_tree.push({i, 1, renew_happiness, renew_time, from});
                 np = np->next;
             }
@@ -370,7 +374,8 @@ class Travel{
                         if(i==from){ n=n->next;continue;}
 
                         int renew_time = acc_time+link_weight[id][i];
-                        int renew_happiness = acc_happ+get_happiness(current_time+renew_time, i);
+                        int real_time = (current_time+renew_time)%DAY_TIME;
+                        int renew_happiness = acc_happ+get_happiness(real_time, i);
                         path_tree.push({i, step+1, renew_happiness, renew_time, id});
                         n = n->next;
                     }
@@ -420,9 +425,9 @@ class Travel{
             int route_happ = optimum_table[route[0]].happiness;//back_point.
             int route_time = optimum_table[route[0]].time;
             cost+=route_time;
-            current_time+=route_time;
             budget-=route_time;
             happiness+=route_happ;
+            current_time=(current_time+route_time)%DAY_TIME;
 
             //get path
             get_path(route, 0, route_size-1);
