@@ -7,6 +7,7 @@
 #define IN_FILE_NAME2 "ans1.txt"
 #define IN_FILE_NAME3 "ans2.txt"
 #define MAX_WEIGHT 2147483647
+#define DAY_TIME 1440
 #define WRONG_NAME_ERROR 30
 #define WRONG_POINT_ERROR 31
 #define WRONG_PATH_ERROR 32
@@ -114,7 +115,8 @@ class Examine{
                 next_idx = it->second;
 
                 if(link_weight[now_idx][next_idx]==MAX_WEIGHT) return WRONG_PATH_ERROR;
-                now_time+=link_weight[now_idx][next_idx];
+                if(in_time>DAY_TIME||out_time>DAY_TIME) return WRONG_TIME_ERROR;
+                now_time=(now_time+link_weight[now_idx][next_idx])%DAY_TIME;
                 if(in_time!=now_time) return WRONG_TIME_ERROR;
                 ex_cost+=link_weight[now_idx][next_idx];
 
