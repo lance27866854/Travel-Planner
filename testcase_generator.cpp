@@ -11,6 +11,7 @@
 #define MIN_COST 0
 #define MAX_DIFF 100
 #define MIN_DIFF 0
+#define DAY_TIME 1440
 // weight define
 //nodes
 #define A_WEIGHT 500
@@ -103,33 +104,33 @@ class TCG{
             out_file<<nodes<<" "<<links<<" "<<budget<<" "<<start_time<<"\n";
             ///nodes
             int happiness_init = A_WEIGHT;
-            int op_time_init = start_time+(X_WEIGHT + Y_WEIGHT + 2*S_WEIGHT)*(right_blocks)-5;
-            int close_time_init = start_time+(X_WEIGHT + Y_WEIGHT + 2*S_WEIGHT)*(right_blocks)+5;
+            int op_time_init = (start_time+(X_WEIGHT + Y_WEIGHT + 2*S_WEIGHT)*(right_blocks))%DAY_TIME;
+            int close_time_init = (start_time+(X_WEIGHT + Y_WEIGHT + 2*S_WEIGHT)*(right_blocks))%DAY_TIME;
             out_file<<name_encoder(0)<<" "<<happiness_init<<" "<<op_time_init<<" "<<close_time_init<<"\n";
 
-            int back_time = start_time + (X_WEIGHT + S_WEIGHT)*right_blocks;
+            int back_time = (start_time + (X_WEIGHT + S_WEIGHT)*right_blocks)%DAY_TIME;
             //right
             for(int i=0;i<right_blocks;i++){//route
                 int start_pt = i*4;
 
                 int happiness1 = B_WEIGHT;
-                int op_time_1 = start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i)-5;
-                int close_time_1 = start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i)+5;
+                int op_time_1 = (start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i))%DAY_TIME;
+                int close_time_1 = (start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i))%DAY_TIME;
                 out_file<<name_encoder(start_pt+1)<<" "<<happiness1<<" "<<op_time_1<<" "<<close_time_1<<"\n";
 
                 int happiness2 = C_WEIGHT;
-                int op_time_2 = back_time+(S_WEIGHT*(right_blocks-i)+Y_WEIGHT*(right_blocks-i-1))-5;
-                int close_time_2 = back_time+(S_WEIGHT*(right_blocks-i)+Y_WEIGHT*(right_blocks-i-1))+5;
+                int op_time_2 = (back_time+(S_WEIGHT*(right_blocks-i)+Y_WEIGHT*(right_blocks-i-1)))%DAY_TIME;
+                int close_time_2 = (back_time+(S_WEIGHT*(right_blocks-i)+Y_WEIGHT*(right_blocks-i-1)))%DAY_TIME;
                 out_file<<name_encoder(start_pt+2)<<" "<<happiness2<<" "<<op_time_2<<" "<<close_time_2<<"\n";
 
                 int happiness3 = D_WEIGHT;
-                int op_time_3 = start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i)-5;
-                int close_time_3 = start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i)+5;
+                int op_time_3 = (start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i))%DAY_TIME;
+                int close_time_3 = (start_time+(X_WEIGHT*(i+1)+S_WEIGHT*i))%DAY_TIME;
                 out_file<<name_encoder(start_pt+3)<<" "<<happiness3<<" "<<op_time_3<<" "<<close_time_3<<"\n";
 
                 int happiness4 = A_WEIGHT;
-                int op_time_4 = (start_time+(X_WEIGHT+S_WEIGHT)*(i+1))-5;
-                int close_time_4 = (start_time+(X_WEIGHT+S_WEIGHT)*(i+1))+5;
+                int op_time_4 = ((start_time+(X_WEIGHT+S_WEIGHT)*(i+1)))%DAY_TIME;
+                int close_time_4 = ((start_time+(X_WEIGHT+S_WEIGHT)*(i+1)))%DAY_TIME;
                 out_file<<name_encoder(start_pt+4)<<" "<<happiness4<<" "<<op_time_4<<" "<<close_time_4<<"\n";
             }
             //left
@@ -137,13 +138,13 @@ class TCG{
                 int start_pt = (i+right_blocks)*4;
                 if(i<=left_blocks/2){
                     int happiness1 = F_WEIGHT;
-                    out_file<<name_encoder(start_pt+1)<<" "<<happiness1<<" 0 10000\n";
+                    out_file<<name_encoder(start_pt+1)<<" "<<happiness1<<" 0 1440\n";
                     int happiness2 = F_WEIGHT;
-                    out_file<<name_encoder(start_pt+2)<<" "<<happiness2<<" 0 10000\n";
+                    out_file<<name_encoder(start_pt+2)<<" "<<happiness2<<" 0 1440\n";
                     int happiness3 = A_WEIGHT;
-                    out_file<<name_encoder(start_pt+3)<<" "<<happiness3<<" 0 10000\n";
+                    out_file<<name_encoder(start_pt+3)<<" "<<happiness3<<" 0 1440\n";
                     int happiness4 = A_WEIGHT;
-                    out_file<<name_encoder(start_pt+4)<<" "<<happiness4<<" 0 10000\n";
+                    out_file<<name_encoder(start_pt+4)<<" "<<happiness4<<" 0 1440\n";
                 }
                 else{
                     int happiness1 = F_WEIGHT;
@@ -204,8 +205,10 @@ class TCG{
 
                 in_file>>nodes_name[i]>>happiness>>start_time>>end_time;
                 if(happiness<0||happiness>500){cout<<"Wrong happiness!\n";return;}
-                if(start_time<0||start_time>2147483647||end_time<0||end_time>2147483647||start_time>end_time){
-                        cout<<"Wrong time!\n";return;
+                if(start_time<0||start_time>DAY_TIME||end_time<0||end_time>DAY_TIME||start_time>end_time){
+                    cout<<"Wrong time!\n";
+                    cout<<"node["<<i<<"]'s start time is : "<<start_time<<", end time is : "<<end_time<<"\n";
+                    return;
                 }
                 for(int j=0;j<i;j++){
                     if(nodes_name[i] == nodes_name[j]){cout<<"Wrong name!\n";return;}
@@ -255,7 +258,7 @@ int main(void){
     TCG tcg;
     //tcg.generate_skewed_graph(100, 1000, 480);
     //tcg.generate_multiroute_graph(97, 10000, 480);
-    tcg.generate_tricky_graph(97, 11520, 480);
+    tcg.generate_tricky_graph(97, 11040, 480);
     out_file.close();
     //read.
     in_file.open(IN_FILE_NAME, ios::in);
