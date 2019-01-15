@@ -5,16 +5,13 @@
 #include <string>
 #include <algorithm>
 
-#define IN_FILE_NAME "tp.data"
-#define OUT_FILE_NAME1 "ans1.txt"
-#define OUT_FILE_NAME2 "ans2.txt"
 #define MAX_WEIGHT 2147483647
 #define DAY_TIME 1440
+
 std::ifstream in_file;
 std::ofstream out_file;
 
 typedef std::pair<int, int> Pair;
-
 int nodes_happiness_id[100];
 int link_weight[100][100];
 std::string nodes_name[100];
@@ -36,13 +33,13 @@ class Path_node{
         int happiness;
         int time;
         int source;
-        friend std::ostream &operator<<(std::ostream &s, Path_node p);
+        //friend std::ostream &operator<<(std::ostream &s, Path_node p);
 };
 
-std::ostream &operator<<(std::ostream &s, Path_node p){
-    s<<"{ "<<p.id<<", "<<p.step<<", "<<p.happiness<<", "<<p.time<<", "<<p.source<<" }\n";
-    return s;
-}
+//std::ostream &operator<<(std::ostream &s, Path_node p){
+//    s<<"{ "<<p.id<<", "<<p.step<<", "<<p.happiness<<", "<<p.time<<", "<<p.source<<" }\n";
+//    return s;
+//}
 
 class Node{
     public:
@@ -109,8 +106,10 @@ class Travel{
             int s = path.size();
             for(int i=0;i<s;i++){
                 out_file<<nodes_name[path[i]]<<" "<<start_time<<" "<<start_time;
-                if(i!=s-1) start_time=(start_time+link_weight[path[i]][path[i+1]])%DAY_TIME;
-                out_file<<"\n";
+                if(i!=s-1){
+                    start_time=(start_time+link_weight[path[i]][path[i+1]])%DAY_TIME;
+                    out_file<<"\n";
+                }
             }
         }
 
@@ -308,6 +307,7 @@ class Travel{
             //prune the path to fit size.
             int idx;
             bool prune_flag = prune(from, route, route_size, idx);
+            
             //renew
             int route_happ = optimum_table[route[idx]].happiness;
             int route_time = optimum_table[route[idx]].time;
@@ -315,16 +315,17 @@ class Travel{
             budget-=route_time;
             happiness+=route_happ;
             current_time=(current_time+route_time)%DAY_TIME;
-
+            bool happ_exhausting = (route_happ==0);
+            
             //get path
             get_path(route, idx, route_size-1);
             from = route[idx];
             delete []route;
             delete []optimum_table;
-            return prune_flag;
+            return (prune_flag&&happ_exhausting);
         }
 
-        void ending_path(const int& from, int& current_time){std::cout<<"**************\n";//shortest oriented.
+        void ending_path(const int& from, int& current_time){//shortest oriented.
             if(from == 0) return;
             ///1.
             std::queue<Path_node> path_tree;
@@ -456,23 +457,21 @@ class Travel{
             return flag;
         }
         void get_path(int* route, const int& start_idx, const int& end_idx){
-            //debug
             for(int i=end_idx-1;i>=start_idx;i--){
                 path.push_back(route[i]);
                 nodes_happiness_id[route[i]]=0;
-                std::cout<<nodes_name[route[i]]<<" ";
             }
-            std::cout<<"\n";
         }
 };
 
-
-int main(void){
+int main(int argc, char *argv[]){
     ///case 1.
-    //files
-    in_file.open(IN_FILE_NAME, std::ios::in);
-    out_file.open(OUT_FILE_NAME1, std::ios::out);
-    if(!in_file||!out_file) std::cout<<"something wrong with the files.";
+    ///file settings.
+    char buffer[30];
+    sprintf(buffer, "./%s/tp.data", argv[1]);
+    in_file.open(buffer,std::ios::in);
+    sprintf(buffer, "./%s/ans1.txt", argv[1]);
+    out_file.open(buffer,std::ios::out);
     //input
     int nodes, links, budget, astart_time;
     in_file>>nodes>>links>>budget>>astart_time;
@@ -515,17 +514,18 @@ int main(void){
     }
     //travel
     Travel t1(nodes, links, budget, astart_time, 0);
-    t1.solve();
-    t1.output();
+    t1.solve();//std::cout<<"#";
+    t1.output();//std::cout<<"#\n";
     //close files and finish
     in_file.close();
     out_file.close();
 
     ///case 2.
-    //files
-    in_file.open(IN_FILE_NAME, std::ios::in);
-    out_file.open(OUT_FILE_NAME2, std::ios::out);
-    if(!in_file||!out_file) std::cout<<"something wrong with the files.";
+    ///file settings.
+    sprintf(buffer, "./%s/tp.data", argv[1]);
+    in_file.open(buffer,std::ios::in);
+    sprintf(buffer, "./%s/ans2.txt", argv[1]);
+    out_file.open(buffer,std::ios::out);
     //input
     in_file>>nodes>>links>>budget>>astart_time;
     //nodes
@@ -567,12 +567,10 @@ int main(void){
     }
     //travel
     Travel t2(nodes, links, budget, astart_time, 1);
-    t2.solve();
-    t2.output();
+    t2.solve();//std::cout<<"#";
+    t2.output();//std::cout<<"#";
     //close files and finish
     in_file.close();
     out_file.close();
     return 0;
 }
-
-
