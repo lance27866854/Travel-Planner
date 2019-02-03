@@ -30,6 +30,7 @@ I am going to give one possible solution of this problem. Because this kind of q
 I use a simple list of steps to show how I optimize the answer:
 
 **- Build the all-pair minimum distance**
+
 **- Continuously call the <font color=#bf2222>find_path()</font> function until the time budget are rather depleted**
 
 Let us focus on the <font color=#bf2222>find_path()</font> function, which is the most important part of this project. First, I use BFS to simulate the process of greedly going through all nodes, and try to find the best route based on the formula **(steps from start nodes + neighbor ports)×happiness** by covering improper results again and again. Then we would get a table of infomation about the time and budget to get that point. We sort this table according to the steps to get the ideal destination point and start the picking process. That is, we are going to pick the points along the virtual path ended by the ideal destination we just choose. Then we would get a sequence of points calling "partial path". We add the partial path into the output traveling list (vector), and that's the end. Call it againd and again, so we can maxmize using the time budget.
