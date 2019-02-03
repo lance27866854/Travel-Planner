@@ -28,6 +28,7 @@ TPE 480 480
 I am going to give one possible solution of this problem. Because this kind of question is to optimize rather than give a specific answear, there must be various way to solve it. So uhm, the following only represents my perspective toward this problem and it's absolutely not the best answer. But I am quite confident to my solution because I got 91 in this assignment, ha.
 
 I use a simple list of steps to show how I optimize the answer:
+
 **- Build the all-pair minimum distance**
 **- Continuously call the <font color=#bf2222>find_path()</font> function until the time budget are rather depleted**
 
