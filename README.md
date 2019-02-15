@@ -1,6 +1,6 @@
 # Travel planner
 **<font color=#bf2222>Description：</font>**
-In this project, I am going to deal with the trave-planning problem. We start with a file with some descriptions of a map, including the number of places, the number of paths, the start time, the time budget and the detail information od these places (happiness we would get if we go through these places, their open time, close time and trevel time between some pairs of places). See the input example below:
+In this project, I am going to deal with the trave-planning problem. We start with a file with some descriptions of a map, including the number of places, the number of paths, the start time, the time budget and the detail information of these places (happiness we would get if we go through these places, their open time, close time and trevel time between some pairs of places). See the input example below:
 ```
 2 1 100 480
 TPE 3 720 900
