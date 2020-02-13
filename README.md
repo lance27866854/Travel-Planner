@@ -1,8 +1,8 @@
 # Travel planner
 **<font color=#bf2222>Description of the task：</font>**
-In this project, we aim to find the route with optimized value of happiness the in a given map. Imagining you are a traveler, and wanting to get a squence of sites to visite. However, as you gain the happiness from traveling those sites, you should also take limited time budget into account. For any given map conformed to the rules, we target writing a program to generate such a route by which to gain optimized happiness.
+In this project, we aim to find the route with optimized value of happiness on any given map. Imagining you are a traveler, and wanting to get a squence of sites to visit. But, as you gain the happiness from traveling those sites, you should also take limited time budget into account and prevent from excessive use of the time. For any given map conformed to the rules, we target writing a program to generate such a route by which to gain as much happiness as possible.
 
-First, we will start with a file with some descriptions of a map, including the number of places, the number of paths, the start time, the time budget and the detail information of these places (happiness we would get if we go through these places, their open time, close time and trevel time between some pairs of places). See the input example below:
+First, we will start with a file with some descriptions of the map, including the number of places, the number of paths, the start time, the time budget and the detail information of these places (happiness we would get if we go through these places, their open time, close time and trevel time between some pairs of places). See the input example below:
 
 ```
 2 1 100 480
