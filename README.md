@@ -1,6 +1,9 @@
 # Travel planner
-**<font color=#bf2222>Description：</font>**
-In this project, I aim to deal with the optimization of trave-planning problem. We start with a file with some descriptions of a map, including the number of places, the number of paths, the start time, the time budget and the detail information of these places (happiness we would get if we go through these places, their open time, close time and trevel time between some pairs of places). See the input example below:
+**<font color=#bf2222>Description of the task：</font>**
+In this project, we aim to find the route with optimized value of happiness the in a given map. Imagining you are a traveler, and wanting to get a squence of sites to visite. However, as you gain the happiness from traveling those sites, you should also take limited time budget into account. For any given map conformed to the rules, we target writing a program to generate such a route by which to gain optimized happiness.
+
+First, we will start with a file with some descriptions of a map, including the number of places, the number of paths, the start time, the time budget and the detail information of these places (happiness we would get if we go through these places, their open time, close time and trevel time between some pairs of places). See the input example below:
+
 ```
 2 1 100 480
 TPE 3 720 900
@@ -11,7 +14,9 @@ TPE NTHU 50
 //The quota of total traveling time is 100 minutes and the time to start traveling is 08:00(or 480 minutes after midnight).
 //Node “TPE” is open between 12:00 ~ 15:00 and node “NTHU” is open all day. The traveling time between “TPE” and “NTHU” is 50 minutes.
 ```
-We need to maximize the result (the happiness) by entering the places in appropriate time within the time budget limit, and also output a file with detailed information about the traveling route and time. See the output example below:
+
+Our goal is to maximize the result (the happiness) by entering the places within the appropriate time slot, and also output a file with detailed information about the traveling route and time. See the output example below:
+
 ```
 7 100
 TPE 480 480
@@ -25,13 +30,12 @@ TPE 480 480
 ```
 
 **<font color=#bf2222>Solution：</font>**
-I am going to give one possible solution of this problem. Because this kind of question is to optimize rather than give a specific answear, there must be various way to solve it. (You might also think of using supervised learning algo, but the problem is data collection.) So uhm, the following only represents my perspective toward this problem and it's absolutely not the best answer. But I am quite confident to my solution because I got 91 points (out of 100) in this assignment, ha.
+Rather than giving a specific answer, things become challenging as it requires us to find the possible optimum within limited time. So there must be a variety of ways to solve it. (You might also think of using reinforced learning algorithm, but the problem is the environment is not fixed.) We are going to give one solution for this problem. It's definitely not the best solution:
 
-I use a simple list of steps to show how I optimize the answer:
-1. Build the all-pair minimum distance
-2. Continuously call the <font color=#bf2222>find_path()</font> function until the time budget are rather depleted
+1. Build the all-pair minimum distance.
+2. Continuously call the <font color=#bf2222>find_path()</font> function until the time budget are rather depleted.
 
-Let us focus on the <font color=#bf2222>find_path()</font> function, which is the most important part of this project. First, I use BFS to simulate the process of greedly going through all nodes, and try to find the best route based on the formula **(steps from start nodes + neighbor ports)×happiness** by covering improper results again and again.
+Let us focus on the <font color=#bf2222>find_path()</font> function, which is the most important part of this project. First, I use BFS algorithm to simulate the process of greedly going through all nodes, and trying to find the best route based on the formula **(steps from start nodes + neighbor ports)×happiness** by covering improper results again and again.
 ```clike=
 //BFS
 while(!path_tree.empty()){
@@ -76,7 +80,9 @@ while(!path_tree.empty()){
     }
 }
 ```
-Then we would get a table of infomation about the time and the budget to get that point. We sort this table according to the steps to get the coordinate of the ideal destination and start the picking process. That is, we are going to pick the points along the virtual path ended by the ideal destination we just choose. Then we would get a sequence of points called "partial path". We add partial pathes into the output traveling list (vector), and that's the end. Call it againd and again, so we can maxmize using the time budget.
+
+After that, we would get a table with infomation about the time and the budget to get to a certain point. We sort this table based on the steps to get the coordinate of the ideal destination before the picking process. That is, we are going to pick the points along the virtual path which is ended by the ideal destination that we just choose. Ultimately, we would get a sequence of points called "partial path", which is going to be added into the output traveling list. Call it againd and again, we can maxmize using the time budget without excess.
+
 ```clike=
 //run
 int last_id = optimum_vec[choice_index].id;
@@ -102,8 +108,9 @@ while(choice_step--){
     }
 }
 ```
-There is another important mechenism to prevent excessive use of time budget, which would lead to illegal output, building by the all-pair minimum distance table.About this part, you can search the Wikipedia to know more：
-https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+
+There is an another important mechanism to prevent excessive use of time budget, which would lead to illegal output, by building the all-pair minimum distance table. More information on Wikipedia: https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
+
 ```clike=
 min_dis = new int* [nodes];
 for(int i=0;i<nodes;i++) min_dis[i] = new int[nodes];
@@ -122,4 +129,3 @@ for(int k=0;k<nodes;k++)
             min_dis[i][k]!=MAX_WEIGHT&&min_dis[k][j]!=MAX_WEIGHT)
                 min_dis[i][j] = min_dis[i][k]+min_dis[k][j];
 ```
-Refer to my code, and you can find more detail. Thanks to read this.
